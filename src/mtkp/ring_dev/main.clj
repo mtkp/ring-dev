@@ -16,6 +16,9 @@
     :parse-fn resolve-var-str
     :validate-fn [some?]
     :validate-msg ["var not found"]]
+   [nil "--repl-port port" "Repl server port number"
+    :default 8001
+    :parse-fn #(Long/valueOf %)]
    [nil "--init init-fn" "Server initialization function -- called on start up"
     :parse-fn resolve-var-str
     :validate-fn [some?]
@@ -48,5 +51,5 @@
       (seq errors)    (do (run! println errors)
                           (System/exit 1))
       :else           (do (when (:repl options)
-                            ((:repl options)))
+                            ((:repl options) (:repl-port options)))
                           (core/start-jetty-server (:handler options) options)))))
