@@ -7,12 +7,6 @@
   [var-str]
   (requiring-resolve (symbol var-str)))
 
-(defn port
-  [raw-port]
-  (Long/parseLong raw-port))
-
-(def noop (constantly nil))
-
 (def cli-options
   [["-h" "--help"]
    ["-p" "--port port" "Server port number"
@@ -22,7 +16,7 @@
     :parse-fn resolve-var-str
     :validate-fn [some?]
     :validate-msg ["Var not found"]]
-   ["-d" "--destroy destroy-fn" "Server shutdown function -- called at exit"
+   ["-d" "--destroy destroy-fn" "Server shutdown function -- called on exit"
     :parse-fn resolve-var-str
     :validate-fn [some?]
     :validate-msg ["var not found"]]
@@ -33,17 +27,24 @@
     :default nil
     :parse-fn (fn [dirs] {:dirs dirs})]])
 
+(defn- parse
+  [args]
+  (let [{:keys [arguments options errors summary]} (cli/parse-opts args cli-options)
+        handler-str (first arguments)
+        handler (resolve-var-str handler-str)]
+    ;; label and validate the server handler
+    {:options (assoc options :handler handler)
+     :errors (cond->> errors
+               (nil? handler) (cons (format "Main handler \"%s\" not found" handler-str)))
+     :summary summary}))
+
 (defn -main
   [& args]
-  (let [{:keys [arguments options errors]} (cli/parse-opts args cli-options)
-        handler-var-str (first arguments)
-        handler (resolve-var-str handler-var-str)
-        errors (cond->> errors
-                 (nil? handler) (cons (format "Main handler \"%s\" not found"
-                                              handler-var-str)))]
-    (when (seq errors)
-      (run! println errors)
-      (System/exit 1))
-    (when (:nrepl options)
-      (core/start-nrepl-server))
-    (core/start-jetty-server handler options)))
+  (let [{:keys [options errors summary]} (parse args)]
+    (cond
+      (:help options) (println summary)
+      (seq errors)    (do (run! println errors)
+                          (System/exit 1))
+      :else           (do (when (:nrepl options)
+                            (core/start-nrepl-server))
+                          (core/start-jetty-server (:handler options) options)))))
