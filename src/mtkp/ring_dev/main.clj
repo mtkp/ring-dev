@@ -12,16 +12,18 @@
    ["-p" "--port port" "Server port number"
     :default 8000
     :parse-fn #(Long/valueOf %)]
-   ["-i" "--init init-fn" "Server initialization function -- called on start up"
-    :parse-fn resolve-var-str
-    :validate-fn [some?]
-    :validate-msg ["Var not found"]]
-   ["-d" "--destroy destroy-fn" "Server shutdown function -- called on exit"
+   [nil "--repl repl-fn" "Embedded REPL initialization function -- called on start up"
     :parse-fn resolve-var-str
     :validate-fn [some?]
     :validate-msg ["var not found"]]
-   [nil "--nrepl" "Start an embedded nREPL server alongside the ring server"
-    :default nil]
+   [nil "--init init-fn" "Server initialization function -- called on start up"
+    :parse-fn resolve-var-str
+    :validate-fn [some?]
+    :validate-msg ["var not found"]]
+   [nil "--destroy destroy-fn" "Server shutdown function -- called on exit"
+    :parse-fn resolve-var-str
+    :validate-fn [some?]
+    :validate-msg ["var not found"]]
    [nil "--reload-paths reload-paths" "List of source paths to reload on change"
     ;; TODO verify this works
     :default nil
@@ -45,6 +47,6 @@
       (:help options) (println summary)
       (seq errors)    (do (run! println errors)
                           (System/exit 1))
-      :else           (do (when (:nrepl options)
-                            (core/start-nrepl-server))
+      :else           (do (when (:repl options)
+                            ((:repl options)))
                           (core/start-jetty-server (:handler options) options)))))

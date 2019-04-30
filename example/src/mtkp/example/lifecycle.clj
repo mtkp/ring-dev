@@ -1,5 +1,9 @@
 (ns mtkp.example.lifecycle)
 
-(defn initialize!
+(defn initialize
   []
-  (println "Starting up example server."))
+  (println "(lifecycle) Starting up server..."))
+
+(defn destroy
+  []
+  (println "(lifecycle) Shutting down server..."))
