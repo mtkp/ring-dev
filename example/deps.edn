@@ -1,0 +1,4 @@
+{:deps {metosin/compojure-api {:mvn/version "1.1.11"}
+        ring/ring-core {:mvn/version "1.7.1"}}
+ :aliases {:server {:main-opts ["-m" "mtkp.ring-dev.main" "mtkp.example.service/handler"
+                                "--init" "mtkp.example.lifecycle/initialize!"]}}}
