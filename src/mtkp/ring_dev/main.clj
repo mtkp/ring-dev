@@ -1,37 +1,37 @@
 (ns mtkp.ring-dev.main
   (:require
-    [clojure.tools.cli :as cli]
-    [mtkp.ring-dev.core :as core]))
+    [clojure.tools.cli :as cli]))
 
 (defn resolve-var-str
   [var-str]
-  (cond-> var-str
-    (string? var-str) (symbol)
-    true (requiring-resolve)))
+  (when var-str
+    (try
+      (requiring-resolve (symbol var-str))
+      (catch Exception _))))
 
 (def cli-options
-  [["-h" "--help"]
+  [[nil "--help" "Print this help"]
    ["-p" "--port port"
     "Server port number"
     :default 8000
     :parse-fn #(Long/valueOf %)]
-   [nil "--browser"
-    "Open server endpoint in default system web browser"
-    :default false]
-   [nil "--reload"
-    "Reload source files on change"
+   [nil "--[no-]reload"
+    "Reload source files on change; default true"
     :default true]
    [nil "--reload-path path"
-    "Path to reloadable source files; can be specified multiple times; default \"src\""
+    "Path to source files; can be specified multiple times; default \"src\""
     :assoc-fn (fn [m k v] (update m k conj v))]
+   [nil "--browser"
+    "Open server endpoint in default system web browser; default false"
+    :default false]
    [nil "--stacktrace"
-    "Pretty-print stacktraces for uncaught exceptions in the handler"
+    "Pretty-print stacktraces for uncaught exceptions; default false"
     :default false]
    [nil "--ring-debug"
-    "Pretty-print ring requests and responses"
+    "Pretty-print ring requests and responses; default false"
     :default false]
    [nil "--ring-spec"
-    "Check server responses against ring spec"
+    "Check ring requests and responses against ring spec; default false"
     :default false]])
 
 (defn- parse
@@ -41,18 +41,42 @@
         handler (resolve-var-str handler-str)]
     {:options (-> options
                   (assoc :handler handler)
-                  (assoc :reload-path (or (seq (:reload-path options)) ["src"])))
+                  (update :reload-path not-empty)
+                  (update :reload-path (fnil identity ["src"])))
      :errors (->> errors
                   (cons (when (nil? handler)
-                          (format "Main handler \"%s\" not found" handler-str)))
-                  (remove nil?))
+                          (format "Server handler \"%s\" not found" handler-str)))
+                  (remove nil?)
+                  (not-empty))
      :summary summary}))
+
+(defn show-help
+  "Print help and exit"
+  [options-summary]
+  (println "Start a ring development server.")
+  (println)
+  (println "Usage: clj -m mtkp.ring-dev.main [options] handler")
+  (println)
+  (println "Options:")
+  (println options-summary)
+  (System/exit 0))
+
+(defn show-errors
+  "Print any command errors and exit"
+  [errors]
+  (run! println errors)
+  (System/exit 1))
+
+(defn start-server
+  [handler options]
+  (require 'mtkp.ring-dev.core)
+  ((resolve 'mtkp.ring-dev.core/start-jetty-server) handler options))
+
 
 (defn -main
   [& args]
   (let [{:keys [options errors summary]} (parse args)]
     (cond
-      (:help options) (println summary)
-      (seq errors)    (do (run! println errors)
-                          (System/exit 1))
-      :else           (core/start-jetty-server (:handler options) options))))
+      (:help options) (show-help summary)
+      errors          (show-errors errors) 
+      :else           (start-server (:handler options) options))))
