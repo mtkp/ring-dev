@@ -16,13 +16,13 @@
         port (.getLocalPort conn)]
     (format "http://%s:%s" host port)))
 
-(defn start-jetty-server 
+(defn start-jetty-server
   [user-handler user-options]
   (let [handler (cond-> user-handler
-                  (:reload user-options) (reload/wrap-reload {:dirs (:reload-path user-options)})
-                  (:stacktrace user-options) (stacktrace/wrap-stacktrace {:color? true})
                   (:ring-debug user-options) (debug/wrap-debug)
-                  (:ring-spec user-options) (spec/wrap-spec))
+                  (:ring-spec user-options) (spec/wrap-spec)
+                  (:reload user-options) (reload/wrap-reload {:dirs (:reload-path user-options)})
+                  (:stacktrace user-options) (stacktrace/wrap-stacktrace))
         options (-> user-options
                     (select-keys [:port])
                     (assoc :join? false))

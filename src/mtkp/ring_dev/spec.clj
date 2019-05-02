@@ -1,26 +1,12 @@
 (ns mtkp.ring-dev.spec
   (:require
     [clojure.spec.alpha :as s]
-    [expound.alpha :as expound]))
-
-(s/def ::body (s/or :nil nil?
-                    :string string?
-                    :seq seq?
-                    :file (partial instance? java.io.File)
-                    :input-stream (partial instance? java.io.InputStream)))
-
-(s/def ::header-val (s/or :string string?
-                          :string-coll (s/coll-of string?)))
-
-(s/def ::headers (s/map-of string? ::header-val))
-
-(s/def ::status (s/and integer? #(>= % 100)))
-
-(s/def ::response (s/keys :req-un [::status]
-                          :opt-un [::body ::headers]))
+    [expound.alpha :as expound]
+    [mtkp.ring-dev.spec.response :as response]
+    [mtkp.ring-dev.spec.request :as request]))
 
 (defn expound
-  "Expound that does not print if success."
+  "Expound that only prints if x does not pass spec"
   [spec x]
   (when-let [explain-data (s/explain-data spec x)]
     (expound/printer explain-data)
@@ -29,6 +15,7 @@
 (defn wrap-spec
   [handler]
   (fn [request]
+    (expound ::request/request request)
     (let [response (handler request)]
-      (expound ::response response)
+      (expound ::response/response response)
       response)))

@@ -78,5 +78,5 @@
   (let [{:keys [options errors summary]} (parse args)]
     (cond
       (:help options) (show-help summary)
-      errors          (show-errors errors) 
+      errors          (show-errors errors)
       :else           (start-server (:handler options) options))))
