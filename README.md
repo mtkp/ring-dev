@@ -3,13 +3,15 @@ mtkp/ring-dev
 
 Run a development ring server with a `deps.edn` project.
 
-This tool is designed to fill a gap when replacing leiningen with tools.deps.alpha
-if previously relying on the useful
-[lein-ring](https://github.com/weavejester/lein-ring) plugin.
-ring-dev enables basic functionality for running a development ring jetty
-server, similar to `lein ring server`.
-Currently there are no plans to implement packaging commands that are found in
-lein-ring (e.g. `lein ring uberwar`).
+This tool is designed to fill a gap when replacing leiningen with
+tools.deps.alpha if previously relying on the useful
+[lein-ring](https://github.com/weavejester/lein-ring) plugin. ring-dev
+provides a way to run a development ring jetty server, similar to
+`lein ring server`.  Currently there are no plans to implement packaging
+commands that are found in lein-ring (e.g. `lein ring uberwar`).
+
+`ring-dev` also includes a few development utilities on top of ring
+jetty adapter, see [options](#options) below.
 
 # Usage
 
