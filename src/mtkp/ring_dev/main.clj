@@ -69,8 +69,7 @@
 
 (defn start-server
   [handler options]
-  (require 'mtkp.ring-dev.core)
-  ((resolve 'mtkp.ring-dev.core/start-jetty-server) handler options))
+  ((requiring-resolve 'mtkp.ring-dev.core/start-jetty-server) handler options))
 
 
 (defn -main
