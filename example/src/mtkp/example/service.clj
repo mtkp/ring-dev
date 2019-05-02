@@ -10,12 +10,6 @@
 
 (def x (atom 0))
 
-(defn with-request-tracing
-  [handler]
-  (fn [request]
-    (println (format "(service/trace) request: [%s]" request))
-    (handler request)))
-
 (defn with-monitor
   [handler]
   (fn [request]
@@ -28,19 +22,30 @@
                        (- (System/currentTimeMillis) start)))
       response)))
 
+(def home-page
+  {:status 200
+   :body "<h1>Home</h1>"
+   :headers {"content-type" "text/html"}})
+
+(def routes
+  [["/" {:get {:response {200 {:body string?}}
+               :handler (constantly home-page)}}]
+   ["/x" {:get {:responses {200 {:body {:message string?}}}
+                :handler (fn [_]
+                           (swap! x inc)
+                           {:status 200
+                            :body {:message (format "[%s]" @x)}})}}]
+   ["/hello" {:get {:parameters {:query {:name string?}}
+                    :responses {200 {:body {:message string?}}}
+                    :handler (fn [req]
+                               {:status 200
+                                :body {:message (->> (get-in req [:parameters :query :name])
+                                                     (format "Hello, %s!"))}})}}]])
+
 (def service-api
   (ring/ring-handler
     (ring/router
-      [["/x" {:get {:responses {200 {:body {:message string?}}}
-                     :handler (fn [_]
-                                {:status 200
-                                 :body {:message (format "[%s]" @x)}})}}]
-       ["/hello" {:get {:parameters {:query {:name string?}}
-                        :responses {200 {:body {:message string?}}}
-                        :handler (fn [req]
-                                   {:status 200
-                                    :body {:message (->> (get-in req [:parameters :query :name])
-                                                         (format "Hello, %s!"))}})}}]]
+      routes
       {:data {:coercion coercion-spec/coercion
               :muuntaja muuntaja/instance
               :middleware [ring-parameters/parameters-middleware
@@ -49,9 +54,11 @@
                            ring-exception/exception-middleware
                            ring-muuntaja/format-request-middleware
                            ring-coercion/coerce-request-middleware
-                           ring-coercion/coerce-response-middleware]}})))
+                           ring-coercion/coerce-response-middleware]}})
+    (constantly {:status 404
+                 :body "<h1>Not found</h1>"
+                 :headers {"content-type" "text/html"}})))
 
 (def handler
   (-> service-api
-      (with-request-tracing)
       (with-monitor)))

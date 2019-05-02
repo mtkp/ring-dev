@@ -1,24 +1,34 @@
 (ns mtkp.ring-dev.core
   (:require
+    [clojure.java.browse :as browse]
     [ring.adapter.jetty :as jetty]
-    [ring.middleware.reload :as reload]))
+    [ring.middleware.stacktrace :as stacktrace]
+    [ring.middleware.reload :as reload]
+    [mtkp.ring-dev.debug :as debug]
+    [mtkp.ring-dev.spec :as spec])
+  (:import
+    (org.eclipse.jetty.server Server ServerConnector)))
 
-(defn add-shutdown-hook!
-  [f]
-  (.addShutdownHook (Runtime/getRuntime) (Thread. f)))
+(defn server-endpoint
+  [^Server server]
+  (let [^ServerConnector conn (first (.getConnectors server))
+        host (or (.getHost conn) "localhost")
+        port (.getLocalPort conn)]
+    (format "http://%s:%s" host port)))
 
 (defn start-jetty-server 
-  [app-handler user-options]
-  (let [handler (-> app-handler
-                    (reload/wrap-reload (:reload-paths user-options)))
+  [user-handler user-options]
+  (let [handler (cond-> user-handler
+                  (:reload user-options) (reload/wrap-reload {:dirs (:reload-path user-options)})
+                  (:stacktrace user-options) (stacktrace/wrap-stacktrace {:color? true})
+                  (:ring-debug user-options) (debug/wrap-debug)
+                  (:ring-spec user-options) (spec/wrap-spec))
         options (-> user-options
                     (select-keys [:port])
                     (assoc :join? false))
-        {:keys [init destroy]} user-options]
-    (when init
-      (init))
-    (when destroy
-      (add-shutdown-hook! destroy))
-    (let [server (jetty/run-jetty handler options)]
-      (println (format "Started ring server on port [%s]" (:port options)))
-      (.join server))))
+        server (jetty/run-jetty handler options)
+        endpoint (server-endpoint server)]
+    (println (format "Started ring jetty server at %s" endpoint))
+    (when (:browser user-options)
+      (browse/browse-url endpoint))
+    (.join server)))

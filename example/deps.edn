@@ -2,25 +2,6 @@
  {metosin/reitit {:mvn/version "0.3.1"}}
 
  :aliases
- {;; start ring jetty server with init and destroy fns
+ {;; start ring jetty server
   :server {:extra-deps {mtkp/ring-dev {:local/root "../"}}
-           :main-opts ["-m" "mtkp.ring-dev.main"
-                       "mtkp.example.service/handler"
-                       "--init" "mtkp.example.lifecycle/initialize"
-                       "--destroy" "mtkp.example.lifecycle/destroy"]}
-
-  ;; start ring jetty server and embedded prepl
-  :server+prepl {:extra-deps {mtkp/ring-dev     {:local/root "../"}}
-                 :main-opts ["-m" "mtkp.ring-dev.main"
-                             "mtkp.example.service/handler"
-                             "--repl" "mtkp.ring-dev.prepl/start"]}
-
-  ;; start ring jetty server and embedded nREPL
-  :server+nrepl {:extra-deps {mtkp/ring-dev     {:local/root "../"}
-                              ;; nrepl and cider-nrepl dependencies must be included
-                              ;; if using mtkp.ring-dev.nrepl
-                              nrepl             {:mvn/version "0.6.0"}
-                              cider/cider-nrepl {:mvn/version "0.21.1"}}
-                 :main-opts ["-m" "mtkp.ring-dev.main"
-                             "mtkp.example.service/handler"
-                             "--repl" "mtkp.ring-dev.nrepl/start"]}}}
+           :main-opts ["-m" "mtkp.ring-dev.main" "mtkp.example.service/handler"]}}}

@@ -6,7 +6,8 @@ Run a development ring server with a `deps.edn` project.
 This tool is designed to fill a gap when replacing leiningen with tools.deps.alpha
 if previously relying on the useful
 [lein-ring](https://github.com/weavejester/lein-ring) plugin.
-ring-dev enables basic functionality similar to `lein ring server-headless`.
+ring-dev enables basic functionality for running a development ring jetty
+server, similar to `lein ring server-headless`.
 Currently there are no plans to mimic the packaging commands of lein-ring
 (e.g. `lein ring uberwar`).
 

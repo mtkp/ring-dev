@@ -5,42 +5,47 @@
 
 (defn resolve-var-str
   [var-str]
-  (requiring-resolve (symbol var-str)))
+  (cond-> var-str
+    (string? var-str) (symbol)
+    true (requiring-resolve)))
 
 (def cli-options
   [["-h" "--help"]
-   ["-p" "--port port" "Server port number"
+   ["-p" "--port port"
+    "Server port number"
     :default 8000
     :parse-fn #(Long/valueOf %)]
-   [nil "--repl repl-fn" "Embedded REPL initialization function -- called on start up"
-    :parse-fn resolve-var-str
-    :validate-fn [some?]
-    :validate-msg ["var not found"]]
-   [nil "--repl-port port" "Repl server port number"
-    :default 8001
-    :parse-fn #(Long/valueOf %)]
-   [nil "--init init-fn" "Server initialization function -- called on start up"
-    :parse-fn resolve-var-str
-    :validate-fn [some?]
-    :validate-msg ["var not found"]]
-   [nil "--destroy destroy-fn" "Server shutdown function -- called on exit"
-    :parse-fn resolve-var-str
-    :validate-fn [some?]
-    :validate-msg ["var not found"]]
-   [nil "--reload-paths reload-paths" "List of source paths to reload on change"
-    ;; TODO verify this works
-    :default nil
-    :parse-fn (fn [dirs] {:dirs dirs})]])
+   [nil "--browser"
+    "Open server endpoint in default system web browser"
+    :default false]
+   [nil "--reload"
+    "Reload source files on change"
+    :default true]
+   [nil "--reload-path path"
+    "Path to reloadable source files; can be specified multiple times; default \"src\""
+    :assoc-fn (fn [m k v] (update m k conj v))]
+   [nil "--stacktrace"
+    "Pretty-print stacktraces for uncaught exceptions in the handler"
+    :default false]
+   [nil "--ring-debug"
+    "Pretty-print ring requests and responses"
+    :default false]
+   [nil "--ring-spec"
+    "Check server responses against ring spec"
+    :default false]])
 
 (defn- parse
   [args]
   (let [{:keys [arguments options errors summary]} (cli/parse-opts args cli-options)
         handler-str (first arguments)
         handler (resolve-var-str handler-str)]
-    ;; label and validate the server handler
-    {:options (assoc options :handler handler)
-     :errors (cond->> errors
-               (nil? handler) (cons (format "Main handler \"%s\" not found" handler-str)))
+    {:options (-> options
+                  (assoc :handler handler)
+                  (assoc :reload-path (or (seq (:reload-path options)) ["src"])))
+     :errors (->> errors
+                  (cons (when (nil? handler)
+                          (format "Main handler \"%s\" not found" handler-str)))
+                  (remove nil?))
      :summary summary}))
 
 (defn -main
@@ -50,6 +55,4 @@
       (:help options) (println summary)
       (seq errors)    (do (run! println errors)
                           (System/exit 1))
-      :else           (do (when (:repl options)
-                            ((:repl options) (:repl-port options)))
-                          (core/start-jetty-server (:handler options) options)))))
+      :else           (core/start-jetty-server (:handler options) options))))
