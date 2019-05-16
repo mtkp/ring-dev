@@ -1,9 +1,8 @@
 (ns mtkp.ring-dev.spec
   (:require
     [clojure.spec.alpha :as s]
-    [expound.alpha :as expound]
-    [mtkp.ring-dev.spec.response :as response]
-    [mtkp.ring-dev.spec.request :as request]))
+    [ring.core.spec] ;; load ring specs
+    [expound.alpha :as expound]))
 
 (defn expound
   "Expound that only prints if x does not pass spec"
@@ -15,7 +14,10 @@
 (defn wrap-spec
   [handler]
   (fn [request]
-    (expound ::request/request request)
+    (expound :ring/request ;; request
+             ;; workaround for :ring/request query-string spec
+             (cond-> request
+               (nil? (:query-string request)) (dissoc :query-string)))
     (let [response (handler request)]
-      (expound ::response/response response)
+      (expound :ring/response response)
       response)))
