@@ -3,5 +3,5 @@
 
  :aliases
  {;; start ring jetty server
-  :server {:extra-deps {mtkp/ring-dev {:local/root "../"}}
+  :server {:extra-deps {mtkp/ring-dev {:local/root "../../"}}
            :main-opts ["-m" "mtkp.ring-dev.main" "mtkp.example.service/handler"]}}}

@@ -48,4 +48,4 @@ start the server)
 clj -M:server --help
 ```
 
-See `example/` for a working example.
+See `examples/` for working examples.
