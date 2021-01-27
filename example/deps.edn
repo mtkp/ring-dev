@@ -1,5 +1,5 @@
 {:deps
- {metosin/reitit {:mvn/version "0.3.1"}}
+ {metosin/reitit {:mvn/version "0.5.11"}}
 
  :aliases
  {;; start ring jetty server
